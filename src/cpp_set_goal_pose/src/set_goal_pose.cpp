@@ -11,16 +11,13 @@
 
 using namespace std::chrono_literals;
 
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
-
 class GoalPosePublisher : public rclcpp::Node
 {
   public:
     GoalPosePublisher()
     : Node("goal_pose_publisher"), message(geometry_msgs::msg::PoseStamped())
     {
-      /* Declare parameters */
+      /* Declare parameters. */
       this->declare_parameter<double>("position.x");
       this->declare_parameter<double>("position.y");
       this->declare_parameter<double>("position.z");
@@ -87,10 +84,10 @@ int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
-  /* Create Node */
+  /* Create node. */
   std::shared_ptr<GoalPosePublisher> goal_setter = std::make_shared<GoalPosePublisher>();
 
-  /* Ensure all parameter are ready */
+  /* Ensure all parameters are ready. */
   std::vector<std::string> required_params = goal_setter -> get_required_params();
   bool params_ready = false;
   while(!params_ready){
@@ -104,11 +101,11 @@ int main(int argc, char * argv[])
     sleep(1);
   }
 
-  /* Create reliable publisher */
+  /* Create a reliable publisher. */
   auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(10)).reliable();
   auto publisher = goal_setter->create_publisher<geometry_msgs::msg::PoseStamped>("/planning/mission_planning/goal", qos_profile);
   
-  /* Publish the message */
+  /* Publish the message. */
   publisher->publish(goal_setter -> get_msg());
   sleep(1);
   rclcpp::shutdown();
