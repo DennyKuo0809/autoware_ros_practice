@@ -40,7 +40,7 @@ ros2 launch autoware_launch planning_simulator.launch.xml map_path:=$HOME/autowa
     . install/setup.bash
     ```
     * Run the node with parameters
-        * <span style="color: yellow">(For demo)</span> replace the `[demo parameter file]` below with `demo_parameters/goal_pose.yaml`
+        * <span style="color:yellow">(For demo)</span> replace the `[demo parameter file]` below with `demo_parameters/goal_pose.yaml`
         * Follow this [link](https://roboticsbackend.com/ros2-yaml-params/) to write your own parameter file in yaml format
     ```sh=
     ros2 run cpp_set_goal_pose goal_pose_setter --ros-args --params-file [demo parameter file]
