@@ -2,6 +2,9 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
+#include <iostream>
+#include <unistd.h>
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -15,40 +18,99 @@ class GoalPosePublisher : public rclcpp::Node
 {
   public:
     GoalPosePublisher()
-    : Node("goal_pose_publisher"), count_(0)
+    : Node("goal_pose_publisher"), message(geometry_msgs::msg::PoseStamped())
     {
-      publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/planning/mission_planning/goal", 10);
-      timer_ = this->create_wall_timer(
-      5000ms, std::bind(&GoalPosePublisher::timer_callback, this));
-    }
+      /* Declare parameters */
+      this->declare_parameter<double>("position.x");
+      this->declare_parameter<double>("position.y");
+      this->declare_parameter<double>("position.z");
+      this->declare_parameter<double>("orientation.x");
+      this->declare_parameter<double>("orientation.y");
+      this->declare_parameter<double>("orientation.z");
+      this->declare_parameter<double>("orientation.w");
 
-  private:
-    void timer_callback()
-    {
-      auto message = geometry_msgs::msg::PoseStamped();
+      double px, py, pz;
+      double ox, oy, oz, ow;
+
+      this->get_parameter("position.x", px);
+      this->get_parameter("position.y", py);
+      this->get_parameter("position.z", pz);
+      this->get_parameter("orientation.x", ox);
+      this->get_parameter("orientation.y", oy);
+      this->get_parameter("orientation.z", oz);
+      this->get_parameter("orientation.w", ow);
+      
+
+      /* Create message */
+      message = geometry_msgs::msg::PoseStamped();
+      /* message: header */
       message.header.frame_id = "map";
       message.header.stamp.sec = 0.0;
       message.header.stamp.nanosec = 0.0;
-      message.pose.position.x = 3729.45654296875;
-      message.pose.position.y = 73723.671875;
-      message.pose.position.z = 0.0;
-      message.pose.orientation.x = 0.0;
-      message.pose.orientation.y = 0.0;
-      message.pose.orientation.z = -0.9624967609145418;
-      message.pose.orientation.w = 0.27129317210172393;
-      // message.data = "Hello, world! " + std::to_string(count_++);
-      // RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-      publisher_->publish(message);
+
+      /* message: position */
+      message.pose.position.x = px;
+      message.pose.position.y = py;
+      message.pose.position.z = pz;
+
+      /* message: orientation */
+      message.pose.orientation.x = ox;
+      message.pose.orientation.y = oy;
+      message.pose.orientation.z = oz;
+      message.pose.orientation.w = ow;
     }
-    rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_;
+
+    geometry_msgs::msg::PoseStamped get_msg() const{
+      return message;
+    }
+    
+    std::vector<std::string> get_required_params() const{
+      return required_params;
+    }
+
+    
+  private:
+    std::vector<std::string> required_params = {
+      "position.x",
+      "position.y",
+      "position.z",
+      "orientation.x",
+      "orientation.y",
+      "orientation.z",
+      "orientation.w",
+    };
+    geometry_msgs::msg::PoseStamped message;
     size_t count_;
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<GoalPosePublisher>());
+
+  /* Create Node */
+  std::shared_ptr<GoalPosePublisher> goal_setter = std::make_shared<GoalPosePublisher>();
+
+  /* Ensure all parameter are ready */
+  std::vector<std::string> required_params = goal_setter -> get_required_params();
+  bool params_ready = false;
+  while(!params_ready){
+    params_ready = true;
+    for(const auto& para_name : required_params){
+      if(!goal_setter -> has_parameter(para_name)){
+        params_ready = false;
+        break;
+      }
+    }
+    sleep(1);
+  }
+
+  /* Create reliable publisher */
+  auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(10)).reliable();
+  auto publisher = goal_setter->create_publisher<geometry_msgs::msg::PoseStamped>("/planning/mission_planning/goal", qos_profile);
+  
+  /* Publish the message */
+  publisher->publish(goal_setter -> get_msg());
+  sleep(1);
   rclcpp::shutdown();
   return 0;
 }

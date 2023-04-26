@@ -1,0 +1,11 @@
+goal_pose_publisher:
+    ros__parameters:
+        position:
+            x: 3729.45654296875
+            y: 73723.671875
+            z: 0.0
+        orientation:
+            x: 0.0
+            y: 0.0
+            z: -0.9624967609145418
+            w: 0.27129317210172393
