@@ -1,4 +1,4 @@
-goal_pose_publisher:
+goal_pose_setter:
     ros__parameters:
         position:
             x: 3729.45654296875

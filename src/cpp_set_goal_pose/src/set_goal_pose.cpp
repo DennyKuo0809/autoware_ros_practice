@@ -15,7 +15,7 @@ class GoalPosePublisher : public rclcpp::Node
 {
   public:
     GoalPosePublisher()
-    : Node("goal_pose_publisher"), message(geometry_msgs::msg::PoseStamped())
+    : Node("goal_pose_setter"), message(geometry_msgs::msg::PoseStamped())
     {
       /* Declare parameters. */
       this->declare_parameter<double>("position.x");
@@ -38,8 +38,9 @@ class GoalPosePublisher : public rclcpp::Node
       this->get_parameter("orientation.w", ow);
       
 
-      /* Create message */
-      message = geometry_msgs::msg::PoseStamped();
+      // std::cerr << "postion:" << px << " " << py << " " << pz << std::endl;
+      // std::cerr << "orientation:" << ox << " " << oy << " " << oz << " " << ow << std::endl;
+
       /* message: header */
       message.header.frame_id = "map";
       message.header.stamp.sec = 0.0;
@@ -55,6 +56,7 @@ class GoalPosePublisher : public rclcpp::Node
       message.pose.orientation.y = oy;
       message.pose.orientation.z = oz;
       message.pose.orientation.w = ow;
+      
     }
 
     geometry_msgs::msg::PoseStamped get_msg() const{
@@ -87,27 +89,21 @@ int main(int argc, char * argv[])
   /* Create node. */
   std::shared_ptr<GoalPosePublisher> goal_setter = std::make_shared<GoalPosePublisher>();
 
-  /* Ensure all parameters are ready. */
-  std::vector<std::string> required_params = goal_setter -> get_required_params();
-  bool params_ready = false;
-  while(!params_ready){
-    params_ready = true;
-    for(const auto& para_name : required_params){
-      if(!goal_setter -> has_parameter(para_name)){
-        params_ready = false;
-        break;
-      }
-    }
-    sleep(1);
+  /* Create a reliable publisher. */
+  auto publisher = goal_setter->create_publisher<geometry_msgs::msg::PoseStamped>("/planning/mission_planning/goal", 10);
+
+  /* Wait for subscriber */
+  while(true){
+    auto cnt = goal_setter -> count_subscribers("/planning/mission_planning/goal");
+    std::cerr << "[INFO] Number of subscriber: " << cnt << std::endl;
+    if(!cnt) sleep(1);
+    else break;
   }
 
-  /* Create a reliable publisher. */
-  auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(10)).reliable();
-  auto publisher = goal_setter->create_publisher<geometry_msgs::msg::PoseStamped>("/planning/mission_planning/goal", qos_profile);
-  
   /* Publish the message. */
-  publisher->publish(goal_setter -> get_msg());
+  publisher -> publish(goal_setter->get_msg());
   sleep(1);
+  
   rclcpp::shutdown();
   return 0;
 }
