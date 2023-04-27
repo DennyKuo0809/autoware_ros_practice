@@ -37,10 +37,6 @@ class GoalPosePublisher : public rclcpp::Node
       this->get_parameter("orientation.z", oz);
       this->get_parameter("orientation.w", ow);
       
-
-      // std::cerr << "postion:" << px << " " << py << " " << pz << std::endl;
-      // std::cerr << "orientation:" << ox << " " << oy << " " << oz << " " << ow << std::endl;
-
       /* message: header */
       message.header.frame_id = "map";
       message.header.stamp.sec = 0.0;
@@ -63,23 +59,9 @@ class GoalPosePublisher : public rclcpp::Node
       return message;
     }
     
-    std::vector<std::string> get_required_params() const{
-      return required_params;
-    }
-
     
   private:
-    std::vector<std::string> required_params = {
-      "position.x",
-      "position.y",
-      "position.z",
-      "orientation.x",
-      "orientation.y",
-      "orientation.z",
-      "orientation.w",
-    };
     geometry_msgs::msg::PoseStamped message;
-    size_t count_;
 };
 
 int main(int argc, char * argv[])
